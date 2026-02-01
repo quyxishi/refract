@@ -1,0 +1,11 @@
+services:
+  refract:
+    container_name: refract
+    build: .
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - /var/log/remnanode/access.log:/var/log/xray/access.log:ro
+      - /var/log/remnanode/block.log:/var/log/xray/block.log

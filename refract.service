@@ -1,0 +1,34 @@
+[Unit]
+Description=Refract is a real-time session concurrency control for Xray-core
+Documentation=https://github.com/quyxishi/refract
+After=network.target
+
+[Service]
+Type=simple
+User=root
+
+EnvironmentFile=-/etc/default/refract
+ExecStart=/opt/refract/refract \
+    --proto=${REFRACT_PROTO:-tcp} \
+    --dport=${REFRACT_DPORT:-443} \
+    --window=${REFRACT_WINDOW:-5s} \
+    --timeout=${REFRACT_TIMEOUT:-1m} \
+    --access.log=${REFRACT_ACCESS_LOG:-/var/log/xray/access.log} \
+    --block.log=${REFRACT_BLOCK_LOG:-/var/log/xray/block.log}
+
+Restart=on-failure
+RestartSec=5s
+
+# Hardening
+ProtectSystem=strict
+ProtectHome=true
+# Allow writing to common log directories.
+# If logs are elsewhere, use 'systemctl edit refract' to add ReadWritePaths.
+ReadWritePaths=/var/log/xray/ /var/log/remnanode/
+
+# Allow NET_ADMIN for iptables/ipset/netlink
+CapabilityBoundingSet=CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_ADMIN
+
+[Install]
+WantedBy=multi-user.target 
