@@ -87,7 +87,7 @@ sudo dnf install -y ipset iptables iproute
 apk add ipset iptables iproute2
 ```
 
-2. Either clone repository and build (via `make build`) or pull latest release for your architecture from [Releases page](https://github.com/quyxishi/refract/releases/latest).
+2. Either clone repository and build (via `make build`) or pull latest release from [Releases page](https://github.com/quyxishi/refract/releases/latest).
 3. Extract the binary to system directory and make it executable:
 
 ```shell
