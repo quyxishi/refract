@@ -146,7 +146,7 @@ systemctl status refract
         "network": "xhttp",
         "security": "reality",
         "sockopt": {
-          "acceptProxyProtocol": true // Accept PROXY v1/v2 from the proxy
+          "acceptProxyProtocol": true // Accept PROXY v1/v2 from the reverse proxy
         }
       }
     }
