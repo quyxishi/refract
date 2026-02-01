@@ -1,5 +1,8 @@
 # refract
 
+[![en](https://img.shields.io/badge/lang-English-blue.svg)](https://github.com/quyxishi/refract/blob/main/README.md)
+[![ru](https://img.shields.io/badge/lang-Russian-blue.svg)](https://github.com/quyxishi/refract/blob/main/README.ru.md)
+
 Refract - это сервис обеспечения соблюдения политик, который предоставляет контроль конкурентных сессий в реальном времени для Xray-core.
 
 Он мониторит логи доступа, чтобы обнаруживать одновременные подключения с разных IP-адресов под одним и тем же идентификатором пользователя, и применяет ограничения, взаимодействуя напрямую с ядром Linux через Netlink и IPSet.
