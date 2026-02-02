@@ -61,8 +61,8 @@ In order to run, Refract requires `host` network mode to see real client IPs and
 ```yaml
 services:
   refract:
+    image: rxyvea/refract:latest
     container_name: refract
-    build: .
     restart: unless-stopped
     network_mode: host
     cap_add:

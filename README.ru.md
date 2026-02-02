@@ -59,8 +59,8 @@ Refract настраивается с помощью флагов командн
 ```yaml
 services:
   refract:
+    image: rxyvea/refract:latest
     container_name: refract
-    build: .
     restart: unless-stopped
     network_mode: host
     cap_add:
