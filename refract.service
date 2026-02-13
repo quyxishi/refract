@@ -24,7 +24,7 @@ ProtectSystem=strict
 ProtectHome=true
 # Allow writing to common log directories.
 # If logs are elsewhere, use 'systemctl edit refract' to add ReadWritePaths.
-ReadWritePaths=/var/log/xray/ /var/log/remnanode/
+ReadWritePaths=/var/log/xray/
 
 # Allow NET_ADMIN for iptables/ipset/netlink
 CapabilityBoundingSet=CAP_NET_ADMIN
