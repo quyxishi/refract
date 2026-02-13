@@ -29,6 +29,7 @@ tmp/
 main
 refract
 *templ.go
+dist/
 
 # OS X generated file
 .DS_Store
