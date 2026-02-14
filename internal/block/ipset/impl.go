@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/coreos/go-iptables/iptables"
 	"github.com/quyxishi/refract/internal/block"
+	"github.com/quyxishi/refract/internal/serial"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netlink/nl"
 )
@@ -16,6 +18,7 @@ const IPSET_NAME string = "refract_banned_users"
 
 type IpsetBlockStrategy struct {
 	Timeout         uint32
+	Protocol        serial.TransportProto
 	DestinationPort uint16
 }
 
@@ -35,7 +38,7 @@ func (h *IpsetBlockStrategy) Init() error {
 	}
 
 	rule := []string{
-		"-p", "tcp", "--dport", strconv.FormatUint(uint64(h.DestinationPort), 10),
+		"-p", strings.ToLower(string(h.Protocol)), "--dport", strconv.FormatUint(uint64(h.DestinationPort), 10),
 		"-m", "set", "--match-set", IPSET_NAME, "src",
 		"-j", "DROP",
 	}
@@ -61,36 +64,53 @@ func (h *IpsetBlockStrategy) Block(ip net.IP) error {
 	var _ = netlink.IpsetAdd(IPSET_NAME, &netlink.IPSetEntry{IP: ip})
 
 	killSockets := func(family uint8) error {
-		sockets, err := netlink.SocketDiagTCPInfo(family)
-		if err != nil {
-			return fmt.Errorf("failed to dump sockets via netlink due: %v", err)
-		}
-
-		for _, sock := range sockets {
-			// Filter for established connections only
-			if sock.InetDiagMsg.State != nl.TCP_CONNTRACK_ESTABLISHED {
-				continue
+		switch h.Protocol {
+		case serial.ProtoTCP:
+			sockets, err := netlink.SocketDiagTCPInfo(family)
+			if err != nil {
+				return fmt.Errorf("failed to dump tcp sockets via netlink due: %v", err)
 			}
 
-			// Filter to match our destination port
-			if sock.InetDiagMsg.ID.SourcePort != h.DestinationPort {
-				continue
-			}
-
-			// Check if the Destination IP (remote user) matches our target
-			if sock.InetDiagMsg.ID.Destination.Equal(ip) {
-				localAddr := &net.TCPAddr{
-					IP:   sock.InetDiagMsg.ID.Source,
-					Port: int(sock.InetDiagMsg.ID.SourcePort),
-				}
-				remoteAddr := &net.TCPAddr{
-					IP:   sock.InetDiagMsg.ID.Destination,
-					Port: int(sock.InetDiagMsg.ID.DestinationPort),
+			for _, sock := range sockets {
+				// Filter for established connections only
+				if sock.InetDiagMsg.State != nl.TCP_CONNTRACK_ESTABLISHED {
+					continue
 				}
 
-				// Destroy the specific socket identified by the message
-				var _ = netlink.SocketDestroy(localAddr, remoteAddr)
+				// Filter to match our destination port
+				if sock.InetDiagMsg.ID.SourcePort != h.DestinationPort {
+					continue
+				}
+
+				// Check if the Destination IP (remote user) matches our target
+				if sock.InetDiagMsg.ID.Destination.Equal(ip) {
+					localAddr := &net.TCPAddr{
+						IP:   sock.InetDiagMsg.ID.Source,
+						Port: int(sock.InetDiagMsg.ID.SourcePort),
+					}
+					remoteAddr := &net.TCPAddr{
+						IP:   sock.InetDiagMsg.ID.Destination,
+						Port: int(sock.InetDiagMsg.ID.DestinationPort),
+					}
+
+					// Destroy the specific socket identified by the message
+					var _ = netlink.SocketDestroy(localAddr, remoteAddr)
+				}
 			}
+		case serial.ProtoUDP:
+			filter := &netlink.ConntrackFilter{}
+
+			// Filter by Layer 3 (IP) Protocol
+			var _ = filter.AddIP(netlink.ConntrackOrigSrcIP, ip)
+			// Filter by Layer 4 (Transport) Protocol
+			var _ = filter.AddProtocol(syscall.IPPROTO_UDP)
+			// Filter by Destination Port
+			var _ = filter.AddPort(netlink.ConntrackOrigDstPort, uint16(h.DestinationPort))
+
+			// Execute deletion from Conntrack table
+			var _, _ = netlink.ConntrackDeleteFilters(netlink.ConntrackTable, netlink.InetFamily(family), filter)
+		default:
+			return fmt.Errorf("unsupported protocol: %s", h.Protocol)
 		}
 
 		return nil

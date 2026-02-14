@@ -45,6 +45,7 @@ func main() {
 	// Hardcode ipset strategy for this moment (todo!)
 	strategy := ipset.IpsetBlockStrategy{
 		Timeout:         uint32(cli.Timeout.Seconds()),
+		Protocol:        serial.TransportProto(cli.Protocol),
 		DestinationPort: cli.DestinationPort,
 	}
 

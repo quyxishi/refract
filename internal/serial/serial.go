@@ -5,6 +5,13 @@ import (
 	"time"
 )
 
+type TransportProto string
+
+const (
+	ProtoTCP TransportProto = "tcp"
+	ProtoUDP TransportProto = "udp"
+)
+
 // UserState tracks the last valid connection info for a user
 type UserState struct {
 	LastIP   net.IP
